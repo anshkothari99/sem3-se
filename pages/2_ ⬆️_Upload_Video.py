@@ -84,9 +84,9 @@ if up_file and uploaded:
 
             # convert frame from BGR to RGB before processing it.
             frame_rgb = frame.to_ndarray(format="rgb24")
-            out_frame, _ = upload_process_frame.process(frame_rgb, pose)
-            stframe.image(out_frame)
-            video_output.write(out_frame[...,::-1])
+            # out_frame, _ = upload_process_frame.process(frame_rgb, pose)
+            stframe.image(frame_rgb)
+            video_output.write(frame_rgb[...,::-1])
 
         
         vf.release()
