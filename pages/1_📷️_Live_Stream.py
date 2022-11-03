@@ -35,6 +35,9 @@ pose = get_mediapipe_pose()
 
 output_video_file = f'output_live.flv'
 
+if os.path.exists(output_video_file):
+    os.remove(output_video_file)
+
 
 def video_frame_callback(frame: av.VideoFrame):
     frame = frame.to_ndarray(format="rgb24")  # Decode and get RGB frame
