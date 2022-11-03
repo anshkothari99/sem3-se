@@ -40,6 +40,9 @@ pose = get_mediapipe_pose()
 
 output_video_file = f'output_recorded.mp4'
 
+if os.path.exists(output_video_file):
+    os.remove(output_video_file)
+
 
 with st.form('Upload', clear_on_submit=True):
     up_file = st.file_uploader("Upload a Video", ['mp4','mov', 'avi'])
