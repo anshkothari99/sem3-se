@@ -65,6 +65,7 @@ if up_file and uploaded:
         tfile.write(up_file.read())
 
         vf = cv2.VideoCapture(tfile.name)
+        vf_av = av.open(tfile.name)
 
         # ---------------------  Write the processed video frame. --------------------
         fps = int(vf.get(cv2.CAP_PROP_FPS))
@@ -79,14 +80,11 @@ if up_file and uploaded:
         txt = st.sidebar.markdown(ip_vid_str, unsafe_allow_html=True)   
         ip_video = st.sidebar.video(tfile.name) 
 
-        while vf.isOpened():
-            ret, frame = vf.read()
-            if not ret:
-                break
+        for frame in vf_av.decode(video=0):
 
             # convert frame from BGR to RGB before processing it.
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            out_frame, _ = upload_process_frame.process(frame, pose)
+            frame_rgb = frame.to_ndarray(format="rgb24")
+            out_frame, _ = upload_process_frame.process(frame_rgb, pose)
             stframe.image(out_frame)
             video_output.write(out_frame[...,::-1])
 
