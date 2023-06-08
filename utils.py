@@ -2,10 +2,55 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+correct = cv2.imread('right.png')
+correct = cv2.cvtColor(correct, cv2.COLOR_BGR2RGB)
+incorrect = cv2.imread('wrong.png')
+incorrect = cv2.cvtColor(incorrect, cv2.COLOR_BGR2RGB)
+
+def draw_rounded_rect(img, rect_start, rect_end, corner_width, box_color):
+
+    x1, y1 = rect_start
+    x2, y2 = rect_end
+    w = corner_width
+
+    # draw filled rectangles
+    cv2.rectangle(img, (x1 + w, y1), (x2 - w, y1 + w), box_color, -1)
+    cv2.rectangle(img, (x1 + w, y2 - w), (x2 - w, y2), box_color, -1)
+    cv2.rectangle(img, (x1, y1 + w), (x1 + w, y2 - w), box_color, -1)
+    cv2.rectangle(img, (x2 - w, y1 + w), (x2, y2 - w), box_color, -1)
+    cv2.rectangle(img, (x1 + w, y1 + w), (x2 - w, y2 - w), box_color, -1)
+
+
+    # draw filled ellipses
+    cv2.ellipse(img, (x1 + w, y1 + w), (w, w),
+                angle = 0, startAngle = -90, endAngle = -180, color = box_color, thickness = -1)
+
+    cv2.ellipse(img, (x2 - w, y1 + w), (w, w),
+                angle = 0, startAngle = 0, endAngle = -90, color = box_color, thickness = -1)
+
+    cv2.ellipse(img, (x1 + w, y2 - w), (w, w),
+                angle = 0, startAngle = 90, endAngle = 180, color = box_color, thickness = -1)
+
+    cv2.ellipse(img, (x2 - w, y2 - w), (w, w),
+                angle = 0, startAngle = 0, endAngle = 90, color = box_color, thickness = -1)
+
+    return img
+
+
+
+
+def draw_dotted_line(frame, lm_coord, start, end, line_color):
+    pix_step = 0
+
+    for i in range(start, end+1, 8):
+        cv2.circle(frame, (lm_coord[0], i+pix_step), 2, line_color, -1, lineType=cv2.LINE_AA)
+
+    return frame
+
 def draw_text(
     img,
-    # count_text,
     msg,
+    width = 7,
     font=cv2.FONT_HERSHEY_SIMPLEX,
     pos=(0, 0),
     font_scale=1,
@@ -13,21 +58,40 @@ def draw_text(
     text_color=(0, 255, 0),
     text_color_bg=(0, 0, 0),
     box_offset=(20, 10),
+    overlay_image = False,
+    overlay_type = None
 ):
 
     offset = box_offset
     x, y = pos
     text_size, _ = cv2.getTextSize(msg, font, font_scale, font_thickness)
     text_w, text_h = text_size
+
     rec_start = tuple(p - o for p, o in zip(pos, offset))
     rec_end = tuple(m + n - o for m, n, o in zip((x + text_w, y + text_h), offset, (25, 0)))
-    cv2.rectangle(img, rec_start, rec_end, text_color_bg, -1)
+
+    resize_height = 0
+
+    if overlay_image:
+        resize_height = rec_end[1] - rec_start[1]
+        # print("Height: ", resize_height)
+        # print("Width: ", rec_end[0] - rec_start[0])
+        img = draw_rounded_rect(img, rec_start, (rec_end[0]+resize_height, rec_end[1]), width, text_color_bg)
+        if overlay_type == "correct":
+            overlay_res = cv2.resize(correct, (resize_height, resize_height), interpolation = cv2.INTER_AREA)		
+        elif overlay_type == "incorrect":
+            overlay_res = cv2.resize(incorrect, (resize_height, resize_height), interpolation = cv2.INTER_AREA)
+
+        img[rec_start[1]:rec_start[1]+resize_height, rec_start[0]+width:rec_start[0]+width+resize_height] = overlay_res
+
+    else:
+        img = draw_rounded_rect(img, rec_start, rec_end, width, text_color_bg)
 
 
     cv2.putText(
         img,
         msg,
-        (int(rec_start[0] + 6), int(y + text_h + font_scale - 1)), 
+        (int(rec_start[0]+resize_height + 8), int(y + text_h + font_scale - 1)), 
         font,
         font_scale,
         text_color,
@@ -38,7 +102,6 @@ def draw_text(
     
     
     return text_size
-
 
 
 
