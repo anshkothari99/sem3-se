@@ -33,11 +33,12 @@ live_process_frame = ProcessFrame(thresholds=thresholds, flip_frame=True)
 pose = get_mediapipe_pose()
 
 
+if 'download' not in st.session_state:
+    st.session_state['download'] = False
+
 output_video_file = f'output_live.flv'
 
-if os.path.exists(output_video_file):
-    os.remove(output_video_file)
-
+  
 
 def video_frame_callback(frame: av.VideoFrame):
     frame = frame.to_ndarray(format="rgb24")  # Decode and get RGB frame
@@ -53,19 +54,28 @@ ctx = webrtc_streamer(
                         key="Squats-pose-analysis",
                         video_frame_callback=video_frame_callback,
                         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},  # Add this config
-                        media_stream_constraints={"video": {"width": {"min":800, "max": 1280}}, "audio": False},
+                        media_stream_constraints={"video": {"width": {'min':480, 'ideal':480}}, "audio": False},
                         video_html_attrs=VideoHTMLAttributes(autoPlay=True, controls=False, muted=False),
                         out_recorder_factory=out_recorder_factory
                     )
 
 
+download_button = st.empty()
+
 if os.path.exists(output_video_file):
     with open(output_video_file, 'rb') as op_vid:
-        st.download_button('Download Video', data = op_vid, file_name='output_live.flv')
+        download = download_button.download_button('Download Video', data = op_vid, file_name='output_live.flv')
+
+        if download:
+            st.session_state['download'] = True
 
 
-    
-    
+
+if os.path.exists(output_video_file) and st.session_state['download']:
+    os.remove(output_video_file)
+    st.session_state['download'] = False
+    download_button.empty()
+
 
     
 
