@@ -38,6 +38,12 @@ upload_process_frame = ProcessFrame(thresholds=thresholds)
 pose = get_mediapipe_pose()
 
 
+download = None
+
+if 'download' not in st.session_state:
+    st.session_state['download'] = False
+
+
 output_video_file = f'output_recorded.mp4'
 
 if os.path.exists(output_video_file):
@@ -68,7 +74,6 @@ if up_file and uploaded:
         tfile.write(up_file.read())
 
         vf = cv2.VideoCapture(tfile.name)
-        vf_av = av.open(tfile.name)
 
         # ---------------------  Write the processed video frame. --------------------
         fps = int(vf.get(cv2.CAP_PROP_FPS))
@@ -83,11 +88,14 @@ if up_file and uploaded:
         txt = st.sidebar.markdown(ip_vid_str, unsafe_allow_html=True)   
         ip_video = st.sidebar.video(tfile.name) 
 
-        for frame in vf_av.decode(video=0):
+        while vf.isOpened():
+            ret, frame = vf.read()
+            if not ret:
+                break
 
             # convert frame from BGR to RGB before processing it.
-            frame_rgb = frame.to_ndarray(format="rgb24")
-            out_frame, _ = upload_process_frame.process(frame_rgb, pose)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out_frame, _ = upload_process_frame.process(frame, pose)
             stframe.image(out_frame)
             video_output.write(out_frame[...,::-1])
 
@@ -106,12 +114,17 @@ if up_file and uploaded:
 
 if os.path.exists(output_video_file):
     with open(output_video_file, 'rb') as op_vid:
-        download_button.download_button('Download Video', data = op_vid, file_name='output_recorded.mp4')
+        download = download_button.download_button('Download Video', data = op_vid, file_name='output_recorded.mp4')
+    
+    if download:
+        st.session_state['download'] = True
 
 
 
-
-
+if os.path.exists(output_video_file) and st.session_state['download']:
+    os.remove(output_video_file)
+    st.session_state['download'] = False
+    download_button.empty()
 
 
     
